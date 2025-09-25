@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react"; 
+import { useEffect, useState, useMemo, useCallback, useRef } from "react"; 
 import { 
     View, 
     FlatList,
@@ -27,7 +27,7 @@ const colors = {
 
 const PAGE = 8; // each request will return 8 quizzes 
 
-export default function FeedScreen() {
+export default function FeedScreen({ navigation }: any) {
     const insets = useSafeAreaInsets(); 
     const win = Dimensions.get("window"); // get the dimensions of your device
 
@@ -74,11 +74,12 @@ export default function FeedScreen() {
             <MCQCard 
                 item={item} 
                 cardHeight={ITEM_HEIGHT}
-                colors={colors}
+                navigation={navigation}
                 safeAreaInsets={insets} // Pass safe area insets to MCQCard
+                colors={colors}
             />
         ), 
-        [ITEM_HEIGHT, insets]
+        [ITEM_HEIGHT, navigation, insets]
     ); 
 
     // extract the key (unique id) from the item 
@@ -106,25 +107,27 @@ export default function FeedScreen() {
                 keyExtractor={keyExtractor}
                 renderItem={renderItem}
                 getItemLayout={getItemLayout}
-                pagingEnabled={true} // Critical for Instagram Reels-like behavior
-                snapToInterval={ITEM_HEIGHT} // Each swipe snaps to exact height
-                snapToAlignment="start" // Snap to start of each item
-                decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
-                showsVerticalScrollIndicator={false} // Hide scroll indicator
-                scrollEventThrottle={16} // Smooth scrolling
+                pagingEnabled={true} //each quiz takes up one full screen
+                snapToInterval={ITEM_HEIGHT} //each snap lands at the top of the card 
+                snapToAlignment="start" //the card's top edge line should align with the top of the screen
+                decelerationRate={Platform.OS === "ios" ? 0.99 : 0.98} //controls how fast the scroll slows down after you swipe 
+                showsVerticalScrollIndicator={false} //hid the scroll bar on the side 
+                scrollEventThrottle={16} //control the speed of onScroll() reacting
                 onEndReached={load} // Load more questions when near the end
                 onEndReachedThreshold={0.7}
                 removeClippedSubviews={true} // Performance optimization
                 windowSize={3} // Keep only 3 screens in memory
                 initialNumToRender={1} // Render only 1 question initially
                 maxToRenderPerBatch={2} // Batch render 2 more as you scroll
-                // REMOVED contentContainerStyle padding - this was causing the bleeding issue
                 contentContainerStyle={{
                     flexGrow: 1, // Allow content to grow but no extra padding
                 }}
                 style={{ flex: 1 }} // Ensure FlatList takes full height
                 bounces={false} // Disable bounce for more native feel
                 overScrollMode="never" // Android: prevent over-scroll glow
+                disableIntervalMomentum={true} // Prevent momentum from skipping items
+                disableScrollViewPanResponder={false} // Allow pan gestures
+                scrollEnabled={true} // Ensure scrolling is enabled
             />
             {loading && (
                 <View style={{

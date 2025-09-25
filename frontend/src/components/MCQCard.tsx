@@ -11,6 +11,7 @@ type Props = {
         answer_index: number; 
     }; 
     cardHeight: number;
+    navigation?: any;
     safeAreaInsets?: {
         top: number;
         bottom: number;
@@ -31,7 +32,7 @@ type Props = {
     };
 }; 
 
-export default function MCQCard({ item, cardHeight, safeAreaInsets, colors }: Props) {
+export default function MCQCard({ item, cardHeight, navigation, safeAreaInsets, colors }: Props) {
     const [selected, setSelected] = useState<number | null>(null);
     const isAnswered = selected !== null; // check if user already chose answer 
 
@@ -53,9 +54,10 @@ export default function MCQCard({ item, cardHeight, safeAreaInsets, colors }: Pr
     const insets = safeAreaInsets || { top: 0, bottom: 0, left: 0, right: 0 };
 
     const getOptionStyle = (optionIndex: number) => {
-        const correct = optionIndex === item.answer_index;
-        const picked = optionIndex === selected;
+        const correct = optionIndex === item.answer_index; //correct option 
+        const picked = optionIndex === selected; //chosen option 
 
+        //default color if not chosen yet
         if (!isAnswered) {
             return {
                 backgroundColor: theme.card,
@@ -64,6 +66,7 @@ export default function MCQCard({ item, cardHeight, safeAreaInsets, colors }: Pr
             };
         }
 
+        //make the button green when it is correct
         if (correct) {
             return {
                 backgroundColor: theme.primary,
@@ -73,6 +76,7 @@ export default function MCQCard({ item, cardHeight, safeAreaInsets, colors }: Pr
             };
         }
 
+        //make the button red 
         if (picked && !correct) {
             return {
                 backgroundColor: theme.destructive,
@@ -114,44 +118,16 @@ export default function MCQCard({ item, cardHeight, safeAreaInsets, colors }: Pr
                 paddingBottom: insets.bottom,
             }
         ]}>
-            {/* Mobile Status Bar */}
-            <View style={styles.statusBar}>
-                <View style={styles.statusLeft}>
-                    <Text style={[styles.time, { color: theme.foreground }]}>8:45</Text>
-                    <Text style={styles.moon}>🌙</Text>
-                </View>
-                <View style={styles.statusRight}>
-                    <View style={styles.signalBars}>
-                        {[1, 1, 1, 0.4].map((opacity, i) => (
-                            <View 
-                                key={i}
-                                style={[
-                                    styles.signalBar, 
-                                    { backgroundColor: theme.foreground, opacity }
-                                ]} 
-                            />
-                        ))}
-                    </View>
-                </View>
-            </View>
 
             {/* Header */}
             <View style={styles.header}>
-                <Pressable style={[styles.backButton, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Pressable 
+                    style={[styles.backButton, { backgroundColor: theme.card, borderColor: theme.border }]}
+                    onPress={() => navigation?.goBack()}
+                >
                     <Ionicons name="chevron-back" size={24} color={theme.foreground} />
                 </Pressable>
-                <Text style={[styles.headerTitle, { color: theme.foreground }]}>Practice</Text>
                 <View style={styles.spacer} />
-            </View>
-
-            {/* Progress Bar */}
-            <View style={[styles.progressContainer, { backgroundColor: theme.muted }]}>
-                <LinearGradient
-                    colors={[theme.primary, theme.accent]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.progressBar}
-                />
             </View>
 
             {/* Main Content - This takes the remaining space */}
@@ -163,7 +139,7 @@ export default function MCQCard({ item, cardHeight, safeAreaInsets, colors }: Pr
                     </Text>
                     
                     {/* Explanation (shown after answering) */}
-                    {isAnswered && (
+                    {/* {isAnswered && (
                         <View style={[styles.explanationContainer, { 
                             backgroundColor: `${theme.accent}1A`, 
                             borderColor: `${theme.accent}4D` 
@@ -181,7 +157,7 @@ export default function MCQCard({ item, cardHeight, safeAreaInsets, colors }: Pr
                                 }
                             </Text>
                         </View>
-                    )}
+                    )} */}
                 </View>
 
                 {/* Options */}
@@ -283,12 +259,12 @@ const styles = StyleSheet.create({
     },
     mainContent: {
         flex: 1, // This takes all remaining space
-        justifyContent: 'center', // Centers the content vertically
+        justifyContent: 'flex-start', // Start from top instead of center
         paddingVertical: 20,
     },
     questionContainer: {
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 60, // Increased margin to push question higher
     },
     questionText: {
         fontSize: 28,
@@ -320,7 +296,7 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     optionsContainer: {
-        gap: 16, // Reduced gap to fit better in screen
+        gap: 30, //gap between each option 
     },
     optionButton: {
         padding: 24, // Slightly reduced padding

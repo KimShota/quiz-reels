@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Button, Alert, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, StyleSheet } from "react-native";
+import { View, Text, Button, Alert, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, StyleSheet, Modal, Animated } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../lib/supabase";
@@ -23,7 +23,8 @@ const colors = {
 const function_url = "/functions/v1/generate-mcqs"; 
 
 export default function UploadScreen({ navigation }: any ){
-    const [loading, setLoading] = useState(false); 
+    const [loading, setLoading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false); 
 
     async function loadPdf(){
         const result = await DocumentPicker.getDocumentAsync({
@@ -104,8 +105,7 @@ export default function UploadScreen({ navigation }: any ){
             throw new Error(await fnRes.text()); 
         }
 
-        Alert.alert("Uploaded!", "MCQs generated. Go to the Feed"); 
-        navigation.navigate("Feed");
+        setShowSuccessModal(true);
         } catch (e: any) {
             Alert.alert("Upload Error", e.message ?? String(e)); 
         } finally {
@@ -177,21 +177,6 @@ export default function UploadScreen({ navigation }: any ){
                         </View>
                     </TouchableOpacity>
                 </View>
-
-                {/* Practice MCQs Button */}
-                <TouchableOpacity
-                    style={styles.practiceButton}
-                    onPress={() => navigation.navigate("Feed")}
-                    activeOpacity={0.95}
-                    disabled={loading}
-                >
-                    <LinearGradient
-                        colors={[colors.accent, colors.accent + 'DD']}
-                        style={styles.practiceButtonGradient}
-                    >
-                        <Text style={styles.practiceButtonText}>🧠 Practice MCQs</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
             </View>
 
             {/* Loading Overlay */}
@@ -203,6 +188,45 @@ export default function UploadScreen({ navigation }: any ){
                     </View>
                 </View>
             )}
+
+            {/* Success Modal */}
+            <Modal
+                visible={showSuccessModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowSuccessModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.successModal}>
+                        <View style={styles.successIconContainer}>
+                            <Ionicons name="checkmark-circle" size={80} color={colors.primary} />
+                        </View>
+                        
+                        <Text style={styles.successTitle}>MCQs are Ready! 🎉</Text>
+                        <Text style={styles.successMessage}>
+                            Your MCQs have been generated successfully! Ready to practice?
+                        </Text>
+                        
+                        <TouchableOpacity
+                            style={styles.practiceButton}
+                            onPress={() => {
+                                setShowSuccessModal(false);
+                                navigation.navigate("Feed");
+                            }}
+                        >
+                            <LinearGradient
+                                colors={[colors.primary, colors.accent]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.practiceButtonGradient}
+                            >
+                                <Ionicons name="bulb" size={24} color="white" />
+                                <Text style={styles.practiceButtonText}>Practice MCQs</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     ); 
 }
@@ -320,26 +344,6 @@ const styles = StyleSheet.create({
         color: colors.mutedForeground,
         fontWeight: '500',
     },
-    practiceButton: {
-        marginBottom: 24,
-        borderRadius: 24,
-        shadowColor: colors.accent,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    practiceButtonGradient: {
-        paddingVertical: 28,
-        paddingHorizontal: 32,
-        borderRadius: 24,
-        alignItems: 'center',
-    },
-    practiceButtonText: {
-        fontSize: 20,
-        fontWeight: '900',
-        color: 'white',
-    },
     actionButtons: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -398,5 +402,60 @@ const styles = StyleSheet.create({
         width: 144,
         height: 6,
         borderRadius: 3,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+    },
+    successModal: {
+        backgroundColor: colors.card,
+        borderRadius: 24,
+        padding: 32,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+        elevation: 16,
+        maxWidth: 320,
+        width: '100%',
+    },
+    successIconContainer: {
+        marginBottom: 24,
+    },
+    successTitle: {
+        fontSize: 25,
+        fontWeight: '900',
+        color: colors.foreground,
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    successMessage: {
+        fontSize: 16,
+        color: colors.mutedForeground,
+        textAlign: 'center',
+        lineHeight: 24,
+        marginBottom: 32,
+    },
+    practiceButton: {
+        width: '100%',
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    practiceButtonGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        gap: 8,
+    },
+    practiceButtonText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: 'white',
     },
 });
