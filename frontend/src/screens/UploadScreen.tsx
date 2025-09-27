@@ -45,10 +45,33 @@ export default function UploadScreen({ navigation }: any ){
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images, 
             base64: false, 
-            quality: 0.9, //compression rate 90%, high quality 
+            quality: 0.7, // Reduced quality to 70% for smaller file size
+            allowsEditing: false,
         }); 
         if (result.canceled || !result.assets?.[0]) return; 
-        await handleUpload(result.assets[0].uri, "image/*"); 
+        
+        // Get proper MIME type from file extension
+        const uri = result.assets[0].uri;
+        const fileExt = uri.split(".").pop()?.toLowerCase();
+        let mimeType = "image/jpeg"; // default
+        
+        switch (fileExt) {
+            case "jpg":
+            case "jpeg":
+                mimeType = "image/jpeg";
+                break;
+            case "png":
+                mimeType = "image/png";
+                break;
+            case "gif":
+                mimeType = "image/gif";
+                break;
+            case "webp":
+                mimeType = "image/webp";
+                break;
+        }
+        
+        await handleUpload(uri, mimeType); 
     }
 
 
@@ -83,7 +106,11 @@ export default function UploadScreen({ navigation }: any ){
         //return an object with only the row you inserted the path and url into
         const { data: files, error: fErr } = await supabase 
             .from("files")
-            .insert([{ storage_path: filePath, public_url: publicUrl }])
+            .insert([{ 
+                storage_path: filePath, 
+                public_url: publicUrl, 
+                mime_type: mime,
+            }])
             .select()
             .limit(1)
 
@@ -107,7 +134,24 @@ export default function UploadScreen({ navigation }: any ){
 
         setShowSuccessModal(true);
         } catch (e: any) {
-            Alert.alert("Upload Error", e.message ?? String(e)); 
+            let errorMessage = e.message ?? String(e);
+            
+            // Parse Gemini API errors for better user experience
+            if (errorMessage.includes("503") || errorMessage.includes("UNAVAILABLE")) {
+                errorMessage = "The AI service is temporarily unavailable. Please try again in a few minutes.";
+            } else if (errorMessage.includes("400") || errorMessage.includes("INVALID_ARGUMENT")) {
+                errorMessage = "The file format is not supported. Please try a different file.";
+            } else if (errorMessage.includes("403") || errorMessage.includes("PERMISSION_DENIED")) {
+                errorMessage = "Access denied. Please check your API configuration.";
+            } else if (errorMessage.includes("File too large")) {
+                errorMessage = "The image file is too large. Please compress it or use a smaller image.";
+            } else if (errorMessage.includes("413") || errorMessage.includes("PAYLOAD_TOO_LARGE")) {
+                errorMessage = "The image file is too large. Please compress it or use a smaller image.";
+            } else if (errorMessage.includes("429") || errorMessage.includes("QUOTA_EXCEEDED")) {
+                errorMessage = "API quota exceeded. Please try again later.";
+            }
+            
+            Alert.alert("Upload Error", errorMessage); 
         } finally {
             setLoading(false); //set loading to false no matter what
         }
