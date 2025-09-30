@@ -22,20 +22,45 @@ const colors = {
 //URL to supabase edge function
 const function_url = "/functions/v1/generate-mcqs"; 
 
+//main function 
 export default function UploadScreen({ navigation }: any ){
     const [loading, setLoading] = useState(false);
-    const [showSuccessModal, setShowSuccessModal] = useState(false); 
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+    // Handle logout
+    const handleLogout = async () => {
+        Alert.alert(
+            "Logout",
+            "Are you sure you want to logout?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Logout", 
+                    style: "destructive",
+                    onPress: async () => {
+                        const { error } = await supabase.auth.signOut();
+                        if (error) {
+                            Alert.alert("Error", error.message);
+                        }
+                        // Navigation will be handled by AuthContext
+                    }
+                }
+            ]
+        );
+    }; 
+
+    //fucntion to load pdfs 
     async function loadPdf(){
         const result = await DocumentPicker.getDocumentAsync({
             type: ["application/pdf"], 
-            multiple: false, 
+            multiple: false, //change to true if you want multiple pdfs 
             copyToCacheDirectory: true, //stores files into app's cache folder 
         }); 
         if(result.canceled || !result.assets?.[0]) return; 
         await handleUpload(result.assets[0].uri, "application/pdf"); 
     }
 
+    //function to load images 
     async function loadImage(){
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync(); 
         if (status !== "granted"){
@@ -103,6 +128,12 @@ export default function UploadScreen({ navigation }: any ){
         const publicUrl = pub?.publicUrl; //store the public url 
         if (!publicUrl) throw new Error("Public URL is not created"); 
 
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error("User not authenticated");
+        }
+
         //return an object with only the row you inserted the path and url into
         const { data: files, error: fErr } = await supabase 
             .from("files")
@@ -110,6 +141,7 @@ export default function UploadScreen({ navigation }: any ){
                 storage_path: filePath, 
                 public_url: publicUrl, 
                 mime_type: mime,
+                user_id: user.id, // Associate file with current user
             }])
             .select()
             .limit(1)
@@ -161,8 +193,15 @@ export default function UploadScreen({ navigation }: any ){
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
             
-            {/* Header with back button and sparkles */}
+            {/* Header with logout button and sparkles */}
             <View style={styles.header}>
+                <TouchableOpacity 
+                    style={styles.logoutButton}
+                    onPress={handleLogout}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="log-out-outline" size={24} color={colors.destructive} />
+                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Edu-Shorts</Text>
                 <Ionicons name="sparkles" size={24} color={colors.secondary} />
             </View>
@@ -288,6 +327,13 @@ const styles = StyleSheet.create({
         paddingVertical: 20,
         backgroundColor: `${colors.primary}08`,
     },
+    logoutButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: `${colors.destructive}15`,
+        borderWidth: 1,
+        borderColor: `${colors.destructive}30`,
+    },
     backButton: {
         padding: 8,
         borderRadius: 20,
@@ -296,8 +342,9 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        paddingLeft: 120, //bring the title to the center 
         color: colors.foreground,
+        flex: 1,
+        textAlign: 'center',
     },
     mainContent: {
         flex: 1,

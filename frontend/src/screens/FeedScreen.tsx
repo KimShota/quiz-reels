@@ -27,6 +27,7 @@ const colors = {
 
 const PAGE = 8; // each request will return 8 quizzes 
 
+//main function
 export default function FeedScreen({ navigation }: any) {
     const insets = useSafeAreaInsets(); 
     const win = Dimensions.get("window"); // get the dimensions of your device
@@ -46,17 +47,34 @@ export default function FeedScreen({ navigation }: any) {
     const load = useCallback(async () => {
         if (loading || end) return; 
         setLoading(true); 
+        
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.log('No authenticated user found');
+            setLoading(false);
+            return;
+        }
+
         const to = from + PAGE - 1; 
-        const { data, error } = await supabase // get quizzes from the database 
+        
+        //Fetch MCQs generated only by the user with the matching user_id 
+        const { data, error } = await supabase 
             .from("mcqs")
-            .select("*") // select all the columns 
+            .select(`
+                *,
+                files!inner(
+                    user_id
+                )
+            `)
+            .eq("files.user_id", user.id) //only look at the current user 
             .order("created_at", { ascending: false })
             .range(from, to); 
 
-        if (error) { // if there is an error, log it 
+        if (error) { //If there is an error, log it 
             console.error(error); 
         } else {
-            setItems((cur) => [...cur, ...(data ?? [])]); // add new ones to the current list of quizzes
+            setItems((cur) => [...cur, ...(data ?? [])]); //add new ones to the current list of quizzes
             if (!data || data.length < PAGE) setEnd(true); // if there are no more quizzes, set the end to true 
             setFrom((f) => f + PAGE); // increment the from by the page size to fetch the next quizzes
         }

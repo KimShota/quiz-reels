@@ -171,19 +171,35 @@ Deno.serve(async (req) => {
 
     // Prompt for MCQ generation
     const prompt = `
-You are an MCQ generator. Based on the following study material, create 30 multiple-choice questions.
+You are an expert MCQ generator. Create 30 high-quality multiple-choice questions based EXCLUSIVELY on the content provided in the study material.
 
-Requirements:
-- Each question must have exactly 4 options.
-- Include "answer_index" (0-based index) for the correct answer.
-- Respond ONLY with a valid JSON array. Do not include any markdown formatting, code blocks, or additional text.
-- Start your response with [ and end with ]
+CRITICAL REQUIREMENTS:
+1. Questions MUST test understanding of the actual content, concepts, facts, and processes described in the material
+2. AVOID questions about document structure, navigation, or "where to find information"
+3. FOCUS on testing knowledge of the subject matter itself
+4. Each question must have exactly 4 options
+5. Include "answer_index" (0-based index) for the correct answer
+6. Respond ONLY with a valid JSON array - no markdown, no code blocks, no additional text
 
-Example format:
-[
-  { "question": "What is...?", "options": ["Option A", "Option B", "Option C", "Option D"], "answer_index": 1 },
-  { "question": "Which of the following...?", "options": ["Choice 1", "Choice 2", "Choice 3", "Choice 4"], "answer_index": 0 }
-]
+QUESTION TYPES TO INCLUDE:
+- Factual knowledge questions (definitions, key facts, numbers, measurements)
+- Conceptual understanding questions (processes, relationships, cause and effect)
+- Application questions (using information to solve problems or make predictions)
+- Analysis questions (comparing, contrasting, identifying patterns)
+
+QUESTION TYPES TO AVOID:
+- Questions about document layout or structure
+- Questions asking "where to find information"
+- Questions about study tips or learning strategies
+- Questions not directly covered in the provided material
+
+GOOD EXAMPLE:
+{ "question": "What is the resolving power of a light microscope?", "options": ["0.2 nm", "200 nm", "2 μm", "0.2 μm"], "answer_index": 1 }
+
+BAD EXAMPLE:
+{ "question": "Where can you find information about cell division?", "options": ["Chapter B2", "Study tips", "Maths skills", "Synoptic links"], "answer_index": 0 }
+
+Generate questions that directly test the user's comprehension of the subject matter presented in the material.
 `;
 
     // Call Gemini
