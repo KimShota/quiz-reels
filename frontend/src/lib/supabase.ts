@@ -4,7 +4,11 @@ const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!; //supabase public url
 const supabaseAnon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!; //supabase anon key
 
 export const supabase = createClient(supabaseUrl, supabaseAnon, { //users can edit the supabase storage within the rules that we defined
-    auth: { persistSession: false }, //supabase won't remember users login
+    auth: { 
+        persistSession: true, // FIXED: Enable session persistence for RLS to work
+        autoRefreshToken: true, // Automatically refresh tokens
+        detectSessionInUrl: false // Disable for mobile apps
+    },
 }); 
 
 console.log("URL from env:", process.env.EXPO_PUBLIC_SUPABASE_URL);
