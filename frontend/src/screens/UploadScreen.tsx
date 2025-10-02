@@ -17,6 +17,7 @@ const colors = {
     mutedForeground: '#6b7280',
     card: '#ffffff',
     border: '#e8f5e8',
+    destructive: '#dc2626', // Friendly red
 }
 
 //URL to supabase edge function
@@ -104,6 +105,34 @@ export default function UploadScreen({ navigation }: any ){
         try {
             setLoading(true); //set loading state to true 
 
+        // Get current user first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error("User not authenticated");
+        }
+
+        // Delete all previous MCQs for this user before uploading new material
+        // This ensures a clean slate for each new upload session
+        const { data: previousFiles } = await supabase
+            .from("files")
+            .select("id")
+            .eq("user_id", user.id);
+        
+        if (previousFiles && previousFiles.length > 0) {
+            const fileIds = previousFiles.map(f => f.id);
+            
+            // Delete all MCQs associated with this user's previous files
+            const { error: deleteMcqError } = await supabase
+                .from("mcqs")
+                .delete()
+                .in("file_id", fileIds);
+            
+            if (deleteMcqError) {
+                console.warn("Failed to delete previous MCQs:", deleteMcqError);
+                // Continue anyway - this is not critical
+            }
+        }
+
         //creates a filename and path
         const fileExt = uri.split(".").pop() ?? "bin"; //take pdf at the last
         const fileName = `${Date.now()}.${fileExt}`; 
@@ -126,13 +155,7 @@ export default function UploadScreen({ navigation }: any ){
 
         const { data: pub } = supabase.storage.from("study").getPublicUrl(filePath); //stores an object that contains url
         const publicUrl = pub?.publicUrl; //store the public url 
-        if (!publicUrl) throw new Error("Public URL is not created"); 
-
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            throw new Error("User not authenticated");
-        }
+        if (!publicUrl) throw new Error("Public URL is not created");
 
         //return an object with only the row you inserted the path and url into
         const { data: files, error: fErr } = await supabase 

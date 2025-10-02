@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
         marginBottom: 60, // Increased margin to push question higher
     },
     questionText: {
-        fontSize: 28,
+        fontSize: 17, //size of the question text
         fontWeight: '900',
         textAlign: 'center',
         lineHeight: 36,
