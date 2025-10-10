@@ -4,7 +4,8 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../lib/supabase";
 import { LinearGradient } from "expo-linear-gradient"; 
-import { Ionicons } from '@expo/vector-icons'; 
+import { Ionicons } from '@expo/vector-icons';
+import { useSubscription } from "../contexts/SubscriptionContext"; 
 
 //Color theme 
 const colors = {
@@ -17,26 +18,86 @@ const colors = {
     mutedForeground: '#6b7280',
     card: '#ffffff',
     border: '#e8f5e8',
+    destructive: '#dc2626', // Friendly red
+    gold: '#ffd700',
 }
 
 //URL to supabase edge function
 const function_url = "/functions/v1/generate-mcqs"; 
 
+//main function 
 export default function UploadScreen({ navigation }: any ){
     const [loading, setLoading] = useState(false);
-    const [showSuccessModal, setShowSuccessModal] = useState(false); 
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const { canUpload, uploadCount, uploadLimit, isProUser, incrementUploadCount } = useSubscription();
 
+    // Handle logout
+    const handleLogout = async () => {
+        Alert.alert(
+            "Logout",
+            "Are you sure you want to logout?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Logout", 
+                    style: "destructive",
+                    onPress: async () => {
+                        const { error } = await supabase.auth.signOut();
+                        if (error) {
+                            Alert.alert("Error", error.message);
+                        }
+                        // Navigation will be handled by AuthContext
+                    }
+                }
+            ]
+        );
+    }; 
+
+    //fucntion to load pdfs 
     async function loadPdf(){
+        // Check upload limit
+        if (!canUpload) {
+            Alert.alert(
+                "Upload Limit Reached",
+                `Free plan allows up to ${uploadLimit} uploads. Upgrade to Pro plan for unlimited access!`,
+                [
+                    { text: "Cancel", style: "cancel" },
+                    { 
+                        text: "View Plans", 
+                        onPress: () => navigation.navigate("Subscription", { source: 'upload' })
+                    }
+                ]
+            );
+            return;
+        }
+
         const result = await DocumentPicker.getDocumentAsync({
             type: ["application/pdf"], 
-            multiple: false, 
+            multiple: false, //change to true if you want multiple pdfs 
             copyToCacheDirectory: true, //stores files into app's cache folder 
         }); 
         if(result.canceled || !result.assets?.[0]) return; 
         await handleUpload(result.assets[0].uri, "application/pdf"); 
     }
 
+    //function to load images 
     async function loadImage(){
+        // Check upload limit
+        if (!canUpload) {
+            Alert.alert(
+                "Upload Limit Reached",
+                `Free plan allows up to ${uploadLimit} uploads. Upgrade to Pro plan for unlimited access!`,
+                [
+                    { text: "Cancel", style: "cancel" },
+                    { 
+                        text: "View Plans", 
+                        onPress: () => navigation.navigate("Subscription", { source: 'upload' })
+                    }
+                ]
+            );
+            return;
+        }
+
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync(); 
         if (status !== "granted"){
             Alert.alert("Permission Required", "We need media permissions"); 
@@ -79,6 +140,34 @@ export default function UploadScreen({ navigation }: any ){
         try {
             setLoading(true); //set loading state to true 
 
+        // Get current user first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error("User not authenticated");
+        }
+
+        // Delete all previous MCQs for this user before uploading new material
+        // This ensures a clean slate for each new upload session
+        const { data: previousFiles } = await supabase
+            .from("files")
+            .select("id")
+            .eq("user_id", user.id);
+        
+        if (previousFiles && previousFiles.length > 0) {
+            const fileIds = previousFiles.map(f => f.id);
+            
+            // Delete all MCQs associated with this user's previous files
+            const { error: deleteMcqError } = await supabase
+                .from("mcqs")
+                .delete()
+                .in("file_id", fileIds);
+            
+            if (deleteMcqError) {
+                console.warn("Failed to delete previous MCQs:", deleteMcqError);
+                // Continue anyway - this is not critical
+            }
+        }
+
         //creates a filename and path
         const fileExt = uri.split(".").pop() ?? "bin"; //take pdf at the last
         const fileName = `${Date.now()}.${fileExt}`; 
@@ -101,7 +190,7 @@ export default function UploadScreen({ navigation }: any ){
 
         const { data: pub } = supabase.storage.from("study").getPublicUrl(filePath); //stores an object that contains url
         const publicUrl = pub?.publicUrl; //store the public url 
-        if (!publicUrl) throw new Error("Public URL is not created"); 
+        if (!publicUrl) throw new Error("Public URL is not created");
 
         //return an object with only the row you inserted the path and url into
         const { data: files, error: fErr } = await supabase 
@@ -110,6 +199,7 @@ export default function UploadScreen({ navigation }: any ){
                 storage_path: filePath, 
                 public_url: publicUrl, 
                 mime_type: mime,
+                user_id: user.id, // Associate file with current user
             }])
             .select()
             .limit(1)
@@ -131,6 +221,9 @@ export default function UploadScreen({ navigation }: any ){
         if (!fnRes.ok){
             throw new Error(await fnRes.text()); 
         }
+
+        // Increment upload count after successful upload
+        await incrementUploadCount();
 
         setShowSuccessModal(true);
         } catch (e: any) {
@@ -161,8 +254,15 @@ export default function UploadScreen({ navigation }: any ){
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
             
-            {/* Header with back button and sparkles */}
+            {/* Header with logout button and sparkles */}
             <View style={styles.header}>
+                <TouchableOpacity 
+                    style={styles.logoutButton}
+                    onPress={handleLogout}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="log-out-outline" size={24} color={colors.destructive} />
+                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Edu-Shorts</Text>
                 <Ionicons name="sparkles" size={24} color={colors.secondary} />
             </View>
@@ -178,9 +278,21 @@ export default function UploadScreen({ navigation }: any ){
                         <Ionicons name="scan" size={48} color="white" />
                     </LinearGradient>
                     <Text style={styles.heroTitle}>Upload your materials!</Text>
-                    <Text style={styles.heroSubtitle}>
-                        Choose your materials and let's get started! 🚀
-                    </Text>
+                    
+                    {/* Upload Count Badge */}
+                    {!isProUser && (
+                        <View style={styles.uploadCountBadge}>
+                            <Text style={styles.uploadCountText}>
+                                Remaining: {uploadLimit - uploadCount}/{uploadLimit} uploads
+                            </Text>
+                        </View>
+                    )}
+                    {isProUser && (
+                        <View style={styles.proBadge}>
+                            <Ionicons name="sparkles" size={16} color={colors.secondary} />
+                            <Text style={styles.proBadgeText}>Pro - Unlimited</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Upload Cards */}
@@ -271,6 +383,27 @@ export default function UploadScreen({ navigation }: any ){
                     </View>
                 </View>
             </Modal>
+
+            {/* Shopping Cart Button - Fixed at Bottom */}
+            <View style={styles.bottomCartContainer}>
+                <TouchableOpacity
+                    style={styles.cartButton}
+                    onPress={() => navigation.navigate("Subscription", { source: 'upload' })}
+                    activeOpacity={0.9}
+                >
+                    <LinearGradient
+                        colors={[colors.secondary, colors.gold]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.cartButtonGradient}
+                    >
+                        <Ionicons name="cart" size={24} color="white" />
+                        <Text style={styles.cartButtonText}>
+                            {isProUser ? 'Manage Plan' : 'Upgrade to Pro'}
+                        </Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
         </SafeAreaView>
     ); 
 }
@@ -288,6 +421,13 @@ const styles = StyleSheet.create({
         paddingVertical: 20,
         backgroundColor: `${colors.primary}08`,
     },
+    logoutButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: `${colors.destructive}15`,
+        borderWidth: 1,
+        borderColor: `${colors.destructive}30`,
+    },
     backButton: {
         padding: 8,
         borderRadius: 20,
@@ -296,8 +436,9 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        paddingLeft: 120, //bring the title to the center 
         color: colors.foreground,
+        flex: 1,
+        textAlign: 'center',
     },
     mainContent: {
         flex: 1,
@@ -501,5 +642,70 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: 'white',
+    },
+    uploadCountBadge: {
+        marginTop: 16,
+        backgroundColor: `${colors.secondary}20`,
+        paddingVertical: 8,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: `${colors.secondary}40`,
+    },
+    uploadCountText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: colors.secondary,
+    },
+    proBadge: {
+        marginTop: 16,
+        backgroundColor: `${colors.secondary}20`,
+        paddingVertical: 8,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: `${colors.secondary}40`,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    proBadgeText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: colors.secondary,
+    },
+    bottomCartContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 24,
+        paddingVertical: 16,
+        paddingBottom: 32,
+        backgroundColor: colors.background,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    cartButton: {
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    cartButtonGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        gap: 12,
+    },
+    cartButtonText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
 });
