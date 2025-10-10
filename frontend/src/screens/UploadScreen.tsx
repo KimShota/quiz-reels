@@ -4,7 +4,8 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../lib/supabase";
 import { LinearGradient } from "expo-linear-gradient"; 
-import { Ionicons } from '@expo/vector-icons'; 
+import { Ionicons } from '@expo/vector-icons';
+import { useSubscription } from "../contexts/SubscriptionContext"; 
 
 //Color theme 
 const colors = {
@@ -18,6 +19,7 @@ const colors = {
     card: '#ffffff',
     border: '#e8f5e8',
     destructive: '#dc2626', // Friendly red
+    gold: '#ffd700',
 }
 
 //URL to supabase edge function
@@ -27,6 +29,7 @@ const function_url = "/functions/v1/generate-mcqs";
 export default function UploadScreen({ navigation }: any ){
     const [loading, setLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const { canUpload, uploadCount, uploadLimit, isProUser, incrementUploadCount } = useSubscription();
 
     // Handle logout
     const handleLogout = async () => {
@@ -52,6 +55,22 @@ export default function UploadScreen({ navigation }: any ){
 
     //fucntion to load pdfs 
     async function loadPdf(){
+        // Check upload limit
+        if (!canUpload) {
+            Alert.alert(
+                "Upload Limit Reached",
+                `Free plan allows up to ${uploadLimit} uploads. Upgrade to Pro plan for unlimited access!`,
+                [
+                    { text: "Cancel", style: "cancel" },
+                    { 
+                        text: "View Plans", 
+                        onPress: () => navigation.navigate("Subscription", { source: 'upload' })
+                    }
+                ]
+            );
+            return;
+        }
+
         const result = await DocumentPicker.getDocumentAsync({
             type: ["application/pdf"], 
             multiple: false, //change to true if you want multiple pdfs 
@@ -63,6 +82,22 @@ export default function UploadScreen({ navigation }: any ){
 
     //function to load images 
     async function loadImage(){
+        // Check upload limit
+        if (!canUpload) {
+            Alert.alert(
+                "Upload Limit Reached",
+                `Free plan allows up to ${uploadLimit} uploads. Upgrade to Pro plan for unlimited access!`,
+                [
+                    { text: "Cancel", style: "cancel" },
+                    { 
+                        text: "View Plans", 
+                        onPress: () => navigation.navigate("Subscription", { source: 'upload' })
+                    }
+                ]
+            );
+            return;
+        }
+
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync(); 
         if (status !== "granted"){
             Alert.alert("Permission Required", "We need media permissions"); 
@@ -187,6 +222,9 @@ export default function UploadScreen({ navigation }: any ){
             throw new Error(await fnRes.text()); 
         }
 
+        // Increment upload count after successful upload
+        await incrementUploadCount();
+
         setShowSuccessModal(true);
         } catch (e: any) {
             let errorMessage = e.message ?? String(e);
@@ -240,9 +278,21 @@ export default function UploadScreen({ navigation }: any ){
                         <Ionicons name="scan" size={48} color="white" />
                     </LinearGradient>
                     <Text style={styles.heroTitle}>Upload your materials!</Text>
-                    <Text style={styles.heroSubtitle}>
-                        Choose your materials and let's get started! 🚀
-                    </Text>
+                    
+                    {/* Upload Count Badge */}
+                    {!isProUser && (
+                        <View style={styles.uploadCountBadge}>
+                            <Text style={styles.uploadCountText}>
+                                Remaining: {uploadLimit - uploadCount}/{uploadLimit} uploads
+                            </Text>
+                        </View>
+                    )}
+                    {isProUser && (
+                        <View style={styles.proBadge}>
+                            <Ionicons name="sparkles" size={16} color={colors.secondary} />
+                            <Text style={styles.proBadgeText}>Pro - Unlimited</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Upload Cards */}
@@ -333,6 +383,27 @@ export default function UploadScreen({ navigation }: any ){
                     </View>
                 </View>
             </Modal>
+
+            {/* Shopping Cart Button - Fixed at Bottom */}
+            <View style={styles.bottomCartContainer}>
+                <TouchableOpacity
+                    style={styles.cartButton}
+                    onPress={() => navigation.navigate("Subscription", { source: 'upload' })}
+                    activeOpacity={0.9}
+                >
+                    <LinearGradient
+                        colors={[colors.secondary, colors.gold]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.cartButtonGradient}
+                    >
+                        <Ionicons name="cart" size={24} color="white" />
+                        <Text style={styles.cartButtonText}>
+                            {isProUser ? 'Manage Plan' : 'Upgrade to Pro'}
+                        </Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
         </SafeAreaView>
     ); 
 }
@@ -571,5 +642,70 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: 'white',
+    },
+    uploadCountBadge: {
+        marginTop: 16,
+        backgroundColor: `${colors.secondary}20`,
+        paddingVertical: 8,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: `${colors.secondary}40`,
+    },
+    uploadCountText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: colors.secondary,
+    },
+    proBadge: {
+        marginTop: 16,
+        backgroundColor: `${colors.secondary}20`,
+        paddingVertical: 8,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: `${colors.secondary}40`,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    proBadgeText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: colors.secondary,
+    },
+    bottomCartContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 24,
+        paddingVertical: 16,
+        paddingBottom: 32,
+        backgroundColor: colors.background,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    cartButton: {
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    cartButtonGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        gap: 12,
+    },
+    cartButtonText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
 });
