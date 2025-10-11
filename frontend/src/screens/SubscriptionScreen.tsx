@@ -248,7 +248,7 @@ export default function SubscriptionScreen({ navigation, route }: SubscriptionSc
         <View style={styles.infoSection}>
           <Text style={styles.infoTitle}>💡 Tips</Text>
           <Text style={styles.infoText}>
-            • Pro plan is ¥600/month and can be cancelled anytime{'\n'}
+            • Pro plan is $5/month and can be cancelled anytime{'\n'}
             • Purchases auto-renew{'\n'}
             • Free plan allows up to 10 uploads{'\n'}
             • You can unsubscribe from Pro plan anytime

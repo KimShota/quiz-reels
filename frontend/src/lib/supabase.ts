@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"; //create connection between your app and supabase backend
+import { createClient } from "@supabase/supabase-js"; //create connection between your app and supabase backend using the supabase SDK's 
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!; //supabase public url
 const supabaseAnon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!; //supabase anon key

@@ -2,12 +2,13 @@ import { useState } from "react";
 import { View, Text, Button, Alert, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, StyleSheet, Modal, Animated } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
+import * as Haptics from 'expo-haptics';
 import { supabase } from "../lib/supabase";
 import { LinearGradient } from "expo-linear-gradient"; 
 import { Ionicons } from '@expo/vector-icons';
 import { useSubscription } from "../contexts/SubscriptionContext"; 
 
-//Color theme 
+//Color theme to match duolingo 
 const colors = {
     background: '#f8fdf9', //light green-tinted background color
     foreground: '#1a1f2e', //deep navy for text 
@@ -31,7 +32,7 @@ export default function UploadScreen({ navigation }: any ){
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const { canUpload, uploadCount, uploadLimit, isProUser, incrementUploadCount } = useSubscription();
 
-    // Handle logout
+    // Handle logout session 
     const handleLogout = async () => {
         Alert.alert(
             "Logout",
@@ -55,6 +56,9 @@ export default function UploadScreen({ navigation }: any ){
 
     //fucntion to load pdfs 
     async function loadPdf(){
+        // Haptic feedback on button press
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        
         // Check upload limit
         if (!canUpload) {
             Alert.alert(
@@ -81,7 +85,10 @@ export default function UploadScreen({ navigation }: any ){
     }
 
     //function to load images 
-    async function loadImage(){
+async function loadImage(){
+        // Haptic feedback on button press
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        
         // Check upload limit
         if (!canUpload) {
             Alert.alert(
@@ -224,7 +231,8 @@ export default function UploadScreen({ navigation }: any ){
 
         // Increment upload count after successful upload
         await incrementUploadCount();
-
+        // Success haptic feedback
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setShowSuccessModal(true);
         } catch (e: any) {
             let errorMessage = e.message ?? String(e);
@@ -366,6 +374,7 @@ export default function UploadScreen({ navigation }: any ){
                         <TouchableOpacity
                             style={styles.practiceButton}
                             onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 setShowSuccessModal(false);
                                 navigation.navigate("Feed");
                             }}

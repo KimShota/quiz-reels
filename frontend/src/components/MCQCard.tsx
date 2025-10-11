@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native"; 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 type Props = {
     item: {
@@ -34,7 +35,23 @@ type Props = {
 
 export default function MCQCard({ item, cardHeight, navigation, safeAreaInsets, colors }: Props) {
     const [selected, setSelected] = useState<number | null>(null);
-    const isAnswered = selected !== null; // check if user already chose answer 
+    const isAnswered = selected !== null; // check if user already chose answer
+
+    // Handle option selection with haptic feedback
+    const handleOptionPress = (optionIndex: number) => {
+        if (isAnswered) return;
+
+        const isCorrect = optionIndex === item.answer_index;
+        
+        // Provide haptic feedback based on correctness
+        if (isCorrect) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
+
+        setSelected(optionIndex);
+    }; 
 
     // Default colors if not provided
     const defaultColors = {
@@ -123,7 +140,10 @@ export default function MCQCard({ item, cardHeight, navigation, safeAreaInsets, 
             <View style={styles.header}>
                 <Pressable 
                     style={[styles.backButton, { backgroundColor: theme.card, borderColor: theme.border }]}
-                    onPress={() => navigation?.goBack()}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        navigation?.goBack();
+                    }}
                 >
                     <Ionicons name="chevron-back" size={24} color={theme.foreground} />
                 </Pressable>
@@ -149,7 +169,7 @@ export default function MCQCard({ item, cardHeight, navigation, safeAreaInsets, 
                             return (
                                 <Pressable
                                     key={idx}
-                                    onPress={() => !isAnswered && setSelected(idx)}
+                                    onPress={() => handleOptionPress(idx)}
                                     style={[styles.optionButton, optionStyle]}
                                     disabled={isAnswered}
                                 >
@@ -246,16 +266,16 @@ const styles = StyleSheet.create({
     questionContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 140, // Fixed height for consistent positioning
+        minHeight: 100, // Minimum height instead of fixed
         paddingHorizontal: 16,
-        marginBottom: 30,
+        marginBottom: 40, // Increased spacing between question and options
     },
     questionText: {
         fontSize: 18,
         fontWeight: '900',
         textAlign: 'center',
-        lineHeight: 28,
         paddingHorizontal: 8,
+        flexShrink: 1, // Allow text to shrink if needed
     },
     explanationContainer: {
         borderRadius: 16,
@@ -280,20 +300,21 @@ const styles = StyleSheet.create({
     },
     optionsWrapper: {
         flex: 1,
-        justifyContent: 'center',
-        paddingBottom: 20,
+        justifyContent: 'flex-start', // Start from top instead of center
+        paddingBottom: 30, // Increased bottom padding
+        paddingTop: 10, // Add top padding for breathing room
     },
     optionsContainer: {
-        gap: 25, //Consistent gap between each option 
+        gap: 30, // Consistent gap between each option 
         paddingHorizontal: 8,
     },
     optionButton: {
-        paddingVertical: 20,
-        paddingHorizontal: 24,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
         borderRadius: 16,
         alignItems: 'flex-start',
         justifyContent: 'center',
-        minHeight: 60, // Minimum height for consistent sizing
+        minHeight: 56, // Minimum height for consistent sizing
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -301,9 +322,11 @@ const styles = StyleSheet.create({
     },
     optionText: {
         fontSize: 16,
-        fontWeight: '600',
-        lineHeight: 22,
+        fontWeight: '800',
+        lineHeight: 24,
         textAlign: 'left',
+        flexWrap: 'wrap', // Ensure text wraps
+        width: '100%', // Take full width for proper wrapping
     },
     bottomIndicator: {
         alignItems: 'center',
