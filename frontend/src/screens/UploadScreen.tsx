@@ -387,9 +387,10 @@ export default function UploadScreen({ navigation }: any ){
             {/* Shopping Cart Button - Fixed at Bottom */}
             <View style={styles.bottomCartContainer}>
                 <TouchableOpacity
-                    style={styles.cartButton}
+                    style={[styles.cartButton, loading && styles.cartButtonDisabled]}
                     onPress={() => navigation.navigate("Subscription", { source: 'upload' })}
                     activeOpacity={0.9}
+                    disabled={loading}
                 >
                     <LinearGradient
                         colors={[colors.secondary, colors.gold]}
@@ -397,9 +398,9 @@ export default function UploadScreen({ navigation }: any ){
                         end={{ x: 1, y: 0 }}
                         style={styles.cartButtonGradient}
                     >
-                        <Ionicons name="cart" size={24} color="white" />
+                        <Ionicons name={loading ? "hourglass" : "cart"} size={24} color="white" />
                         <Text style={styles.cartButtonText}>
-                            {isProUser ? 'Manage Plan' : 'Upgrade to Pro'}
+                            {loading ? 'Processing...' : (isProUser ? 'Manage Plan' : 'Upgrade to Pro')}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -694,6 +695,9 @@ const styles = StyleSheet.create({
     cartButton: {
         borderRadius: 16,
         overflow: 'hidden',
+    },
+    cartButtonDisabled: {
+        opacity: 0.5,
     },
     cartButtonGradient: {
         flexDirection: 'row',

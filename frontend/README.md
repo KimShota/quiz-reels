@@ -21,6 +21,7 @@ Edu-Shorts is a learning app that automatically generates MCQs (Multiple Choice 
 - Upload limit: Unlimited
 - MCQ generation: Unlimited
 - Ad-free
+- Cancel anytime
 
 ## Setup
 

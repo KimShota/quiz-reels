@@ -40,6 +40,7 @@ interface SubscriptionContextType {
   restorePurchases: () => Promise<void>;
   incrementUploadCount: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
+  unsubscribeFromPro: () => Promise<void>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
@@ -55,6 +56,7 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   restorePurchases: async () => {},
   incrementUploadCount: async () => {},
   refreshSubscription: async () => {},
+  unsubscribeFromPro: async () => {},
 });
 
 export const useSubscription = () => {
@@ -250,6 +252,32 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
+  // Mock unsubscribe from Pro plan
+  const unsubscribeFromPro = async () => {
+    try {
+      Alert.alert(
+        'Unsubscribe from Pro',
+        'Are you sure you want to unsubscribe from Pro plan? You will lose access to unlimited uploads.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Unsubscribe', 
+            style: 'destructive',
+            onPress: async () => {
+              await syncMockWithSupabase(false);
+              Alert.alert(
+                'Unsubscribed',
+                'You have successfully unsubscribed from Pro plan. You are now on the free plan.'
+              );
+            }
+          }
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'An error occurred during unsubscription');
+    }
+  };
+
   // Refresh subscription data
   const refreshSubscription = async () => {
     setLoading(true);
@@ -283,6 +311,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         restorePurchases,
         incrementUploadCount,
         refreshSubscription,
+        unsubscribeFromPro,
       }}
     >
       {children}

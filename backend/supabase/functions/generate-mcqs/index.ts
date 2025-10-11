@@ -175,31 +175,40 @@ You are an expert MCQ generator. Create 30 high-quality multiple-choice question
 
 CRITICAL REQUIREMENTS:
 1. Questions MUST test understanding of the actual content, concepts, facts, and processes described in the material
-2. AVOID questions about document structure, navigation, or "where to find information"
-3. FOCUS on testing knowledge of the subject matter itself
-4. Each question must have exactly 4 options
-5. Include "answer_index" (0-based index) for the correct answer
-6. Respond ONLY with a valid JSON array - no markdown, no code blocks, no additional text
+2. Questions must be answerable from MEMORY - users should NOT need to look back at the material
+3. AVOID questions about document structure, navigation, images, figures, charts, or "where to find information"
+4. FOCUS on testing knowledge of the subject matter itself
+5. Each question must have exactly 4 options
+6. Include "answer_index" (0-based index) for the correct answer
+7. Respond ONLY with a valid JSON array - no markdown, no code blocks, no additional text
 
 QUESTION TYPES TO INCLUDE:
 - Factual knowledge questions (definitions, key facts, numbers, measurements)
 - Conceptual understanding questions (processes, relationships, cause and effect)
 - Application questions (using information to solve problems or make predictions)
 - Analysis questions (comparing, contrasting, identifying patterns)
+- Questions about concepts, theories, formulas, or principles mentioned in the text
 
-QUESTION TYPES TO AVOID:
-- Questions about document layout or structure
-- Questions asking "where to find information"
-- Questions about study tips or learning strategies
+QUESTION TYPES TO STRICTLY AVOID:
+- Questions about document layout, structure, or organization
+- Questions asking "where to find information" or "which page/section"
+- Questions about images, figures, charts, diagrams, or visual elements
+- Questions asking "what does the image/figure/chart show"
+- Questions about study tips, learning strategies, or methodology
 - Questions not directly covered in the provided material
+- Questions requiring visual inspection of the material
 
-GOOD EXAMPLE:
+GOOD EXAMPLES:
 { "question": "What is the resolving power of a light microscope?", "options": ["0.2 nm", "200 nm", "2 μm", "0.2 μm"], "answer_index": 1 }
+{ "question": "Which process occurs during photosynthesis?", "options": ["Glucose breakdown", "Carbon dioxide absorption", "Protein synthesis", "DNA replication"], "answer_index": 1 }
+{ "question": "What is the chemical formula for water?", "options": ["H2O", "CO2", "NaCl", "O2"], "answer_index": 0 }
 
-BAD EXAMPLE:
+BAD EXAMPLES (DO NOT CREATE THESE):
 { "question": "Where can you find information about cell division?", "options": ["Chapter B2", "Study tips", "Maths skills", "Synoptic links"], "answer_index": 0 }
+{ "question": "What does the image at the bottom of page 587 depict?", "options": ["A cell", "A molecule", "A process", "A structure"], "answer_index": 0 }
+{ "question": "Which figure shows the process of mitosis?", "options": ["Figure 1", "Figure 2", "Figure 3", "Figure 4"], "answer_index": 0 }
 
-Generate questions that directly test the user's comprehension of the subject matter presented in the material.
+Generate questions that directly test the user's comprehension and memory of the subject matter presented in the material. Users should be able to answer all questions without looking back at the original material.
 `;
 
     // Call Gemini

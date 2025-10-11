@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     progressBar: {
         height: '100%',
         width: '60%',
-        borderRadius: 6,
+        borderRadius: 10,
     },
     mainContent: {
         flex: 1, // This takes all remaining space
@@ -264,14 +264,14 @@ const styles = StyleSheet.create({
     },
     questionContainer: {
         alignItems: 'center',
-        marginBottom: 60, // Increased margin to push question higher
+        marginBottom: 40, // Increased margin to push question higher
     },
     questionText: {
         fontSize: 17, //size of the question text
         fontWeight: '900',
         textAlign: 'center',
         lineHeight: 36,
-        marginBottom: 16,
+        marginBottom: 6,
         paddingHorizontal: 8,
     },
     explanationContainer: {

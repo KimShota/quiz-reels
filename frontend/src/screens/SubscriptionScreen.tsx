@@ -46,6 +46,7 @@ export default function SubscriptionScreen({ navigation, route }: SubscriptionSc
     loading,
     purchasePro,
     restorePurchases,
+    unsubscribeFromPro,
   } = useSubscription();
 
   const source = route?.params?.source || 'settings';
@@ -232,13 +233,25 @@ export default function SubscriptionScreen({ navigation, route }: SubscriptionSc
           <Text style={styles.restoreButtonText}>Restore Purchases</Text>
         </TouchableOpacity>
 
+        {/* Unsubscribe Button - Only show for Pro users */}
+        {isProUser && (
+          <TouchableOpacity
+            style={styles.unsubscribeButton}
+            onPress={unsubscribeFromPro}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.unsubscribeButtonText}>Unsubscribe from Pro</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Info Section */}
         <View style={styles.infoSection}>
           <Text style={styles.infoTitle}>💡 Tips</Text>
           <Text style={styles.infoText}>
             • Pro plan is ¥600/month and can be cancelled anytime{'\n'}
             • Purchases auto-renew{'\n'}
-            • Free plan allows up to 10 uploads
+            • Free plan allows up to 10 uploads{'\n'}
+            • You can unsubscribe from Pro plan anytime
           </Text>
         </View>
       </ScrollView>
@@ -456,6 +469,22 @@ const styles = StyleSheet.create({
   },
   restoreButtonText: {
     color: colors.accent,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  unsubscribeButton: {
+    alignSelf: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    marginTop: 8,
+    marginBottom: 24,
+    backgroundColor: `${colors.destructive}15`,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: `${colors.destructive}30`,
+  },
+  unsubscribeButtonText: {
+    color: colors.destructive,
     fontSize: 16,
     fontWeight: '600',
   },
