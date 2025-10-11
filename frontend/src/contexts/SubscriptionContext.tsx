@@ -159,13 +159,13 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // Update Supabase subscription
       const { error } = await supabase
         .from('user_subscriptions')
-        .upsert({
-          user_id: user.id,
+        .update({
           plan_type: isProSubscribed ? 'pro' : 'free',
           status: 'active',
           revenue_cat_customer_id: `mock_${user.id}`,
           updated_at: new Date().toISOString(),
-        });
+        })
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error syncing subscription:', error);
@@ -235,12 +235,12 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       
       const { error } = await supabase
         .from('user_usage_stats')
-        .upsert({
-          user_id: user.id,
+        .update({
           upload_count: newCount,
           last_upload_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        })
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error incrementing upload count:', error);

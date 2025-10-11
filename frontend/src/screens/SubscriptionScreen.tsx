@@ -127,7 +127,7 @@ export default function SubscriptionScreen({ navigation, route }: SubscriptionSc
           <View style={styles.planHeader}>
             <View>
               <Text style={styles.planName}>Free Plan</Text>
-              <Text style={styles.planPrice}>¥0</Text>
+              <Text style={styles.planPrice}>$0</Text>
             </View>
             <View style={styles.planIcon}>
               <Ionicons name="rocket-outline" size={32} color={colors.primary} />
@@ -170,7 +170,7 @@ export default function SubscriptionScreen({ navigation, route }: SubscriptionSc
               <View>
                 <Text style={styles.planName}>Pro Plan</Text>
                 <View style={styles.priceContainer}>
-                  <Text style={styles.planPrice}>¥600</Text>
+                  <Text style={styles.planPrice}>$5</Text>
                   <Text style={styles.pricePeriod}>/month</Text>
                 </View>
               </View>

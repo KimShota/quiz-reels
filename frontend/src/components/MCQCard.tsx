@@ -132,53 +132,34 @@ export default function MCQCard({ item, cardHeight, navigation, safeAreaInsets, 
 
             {/* Main Content - This takes the remaining space */}
             <View style={styles.mainContent}>
-                {/* Question */}
+                {/* Question - Fixed position */}
                 <View style={styles.questionContainer}>
                     <Text style={[styles.questionText, { color: theme.foreground }]}>
                         {item.question}
                     </Text>
-                    
-                    {/* Explanation (shown after answering) */}
-                    {/* {isAnswered && (
-                        <View style={[styles.explanationContainer, { 
-                            backgroundColor: `${theme.accent}1A`, 
-                            borderColor: `${theme.accent}4D` 
-                        }]}>
-                            <View style={styles.explanationHeader}>
-                                <Ionicons name="flash" size={20} color={theme.accent} />
-                                <Text style={[styles.explanationTitle, { color: theme.accent }]}>
-                                    Explanation
-                                </Text>
-                            </View>
-                            <Text style={[styles.explanationText, { color: theme.foreground }]}>
-                                {selected === item.answer_index 
-                                    ? "Great job! You got it right! 🎉" 
-                                    : "Don't worry, keep practicing! The correct answer is highlighted in green. 💪"
-                                }
-                            </Text>
-                        </View>
-                    )} */}
                 </View>
 
-                {/* Options */}
-                <View style={styles.optionsContainer}>
-                    {item.options.map((opt, idx) => {
-                        const optionStyle = getOptionStyle(idx);
-                        const textStyle = getOptionTextStyle(idx);
+                {/* Options - Dynamic spacing with ScrollView for overflow */}
+                <View style={styles.optionsWrapper}>
+                    <View style={styles.optionsContainer}>
+                        {item.options.map((opt, idx) => {
+                            const optionStyle = getOptionStyle(idx);
+                            const textStyle = getOptionTextStyle(idx);
 
-                        return (
-                            <Pressable
-                                key={idx}
-                                onPress={() => !isAnswered && setSelected(idx)}
-                                style={[styles.optionButton, optionStyle]}
-                                disabled={isAnswered}
-                            >
-                                <Text style={[styles.optionText, textStyle]}>
-                                    {opt}
-                                </Text>
-                            </Pressable>
-                        );
-                    })}
+                            return (
+                                <Pressable
+                                    key={idx}
+                                    onPress={() => !isAnswered && setSelected(idx)}
+                                    style={[styles.optionButton, optionStyle]}
+                                    disabled={isAnswered}
+                                >
+                                    <Text style={[styles.optionText, textStyle]}>
+                                        {opt}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
                 </View>
             </View>
         </View>
@@ -258,20 +239,22 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     mainContent: {
-        flex: 1, // This takes all remaining space
-        justifyContent: 'flex-start', // Start from top instead of center
+        flex: 1,
+        justifyContent: 'flex-start', // Start from top
         paddingVertical: 20,
     },
     questionContainer: {
         alignItems: 'center',
-        marginBottom: 40, // Increased margin to push question higher
+        justifyContent: 'center',
+        height: 140, // Fixed height for consistent positioning
+        paddingHorizontal: 16,
+        marginBottom: 30,
     },
     questionText: {
-        fontSize: 17, //size of the question text
+        fontSize: 18,
         fontWeight: '900',
         textAlign: 'center',
-        lineHeight: 36,
-        marginBottom: 6,
+        lineHeight: 28,
         paddingHorizontal: 8,
     },
     explanationContainer: {
@@ -295,22 +278,32 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 20,
     },
+    optionsWrapper: {
+        flex: 1,
+        justifyContent: 'center',
+        paddingBottom: 20,
+    },
     optionsContainer: {
-        gap: 30, //gap between each option 
+        gap: 25, //Consistent gap between each option 
+        paddingHorizontal: 8,
     },
     optionButton: {
-        padding: 24, // Slightly reduced padding
+        paddingVertical: 20,
+        paddingHorizontal: 24,
         borderRadius: 16,
         alignItems: 'flex-start',
+        justifyContent: 'center',
+        minHeight: 60, // Minimum height for consistent sizing
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 2,
     },
     optionText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        lineHeight: 24,
+        fontSize: 16,
+        fontWeight: '600',
+        lineHeight: 22,
+        textAlign: 'left',
     },
     bottomIndicator: {
         alignItems: 'center',
